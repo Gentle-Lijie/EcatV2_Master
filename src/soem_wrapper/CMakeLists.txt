@@ -24,6 +24,15 @@ include_directories(
         include
 )
 
+execute_process(
+        COMMAND git rev-parse --short HEAD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+add_compile_definitions(GIT_HASH="${GIT_HASH}")
+
 add_executable(soem_backend
         src/soem_backend.cpp
         src/ecat_node.cpp
@@ -36,6 +45,7 @@ add_executable(soem_backend
         src/tasks/lk_motor.cpp
         src/tasks/onboard_pwm.cpp
         src/tasks/sbus_rc.cpp
+        src/tasks/super_cap.cpp
 
         src/utils/io_utils.cpp
         src/utils/logger_utils.cpp

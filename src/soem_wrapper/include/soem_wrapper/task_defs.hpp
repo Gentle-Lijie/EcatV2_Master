@@ -27,6 +27,8 @@
 #include "custom_msgs/msg/write_dm_motor_mit_control.hpp"
 #include "custom_msgs/msg/write_dm_motor_position_control_with_speed_limit.hpp"
 #include "custom_msgs/msg/write_dm_motor_speed_control.hpp"
+#include "custom_msgs/msg/read_super_cap.hpp"
+#include "custom_msgs/msg/write_super_cap.hpp"
 
 namespace aim::ecat {
     class SlaveDevice;
@@ -46,6 +48,7 @@ namespace aim::ecat::task {
     constexpr uint8_t CAN_PMU_APP_ID = 10;
     constexpr uint8_t SBUS_RC_APP_ID = 11;
     constexpr uint8_t DM_MOTOR_APP_ID = 12;
+    constexpr uint8_t SUPER_CAP_APP_ID = 13;
 
     class TaskWrapper {
         uint8_t type_id_ = 0;
@@ -532,6 +535,51 @@ namespace aim::ecat::task {
                 }
                 if (subscriber_speed_control_) {
                     subscriber_speed_control_.reset();
+                }
+            }
+
+            void init_sdo(uint8_t *buf, int *offset, uint16_t slave_id, const std::string &prefix) override;
+
+            void publish_empty_message() override;
+
+            void read() override;
+
+            void init_value() override;
+        };
+    }
+
+    namespace super_cap {
+        enum class ReportedState : uint8_t {
+            UNKNOWN = 255,
+            DISCHARGE = 0,
+            CHARGE = 1,
+            WAIT = 2,
+            SOFT_START_PROTECTION = 3,
+            OCP_PROTECTION = 4,
+            OVP_BAT_PROTECTION = 5,
+            UVP_BAT_PROTECTION = 6,
+            UVP_CAP_PROTECTION = 7,
+            OTP_PROTECTION = 8
+        };
+
+        class SUPER_CAP final : public TaskWrapper {
+            static custom_msgs::msg::ReadSuperCap custom_msgs_readsupercap_shared_msg;
+
+            rclcpp::Publisher<custom_msgs::msg::ReadSuperCap>::SharedPtr publisher_{};
+            rclcpp::Subscription<custom_msgs::msg::WriteSuperCap>::SharedPtr subscriber_{};
+
+            void on_command(custom_msgs::msg::WriteSuperCap::SharedPtr msg) const;
+
+        public:
+            SUPER_CAP() : TaskWrapper(SUPER_CAP_APP_ID, "SUPER_CAP", true, true) {
+            }
+
+            void cleanup() override {
+                if (publisher_) {
+                    publisher_.reset();
+                }
+                if (subscriber_) {
+                    subscriber_.reset();
                 }
             }
 

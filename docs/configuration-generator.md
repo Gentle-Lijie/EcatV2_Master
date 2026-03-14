@@ -51,33 +51,33 @@ ROS2 message type(s):
 They're tested by various test cases, and should be working fine.
 
 * RCs
-  * [DJI RC](task-info/dji-rc.md)
-  * [SBUS RC](task-info/sbus-rc.md)
+    * [DJI RC](task-info/dji-rc.md)
+    * [SBUS RC](task-info/sbus-rc.md)
 
 * Sensors
-  * [HIPNUC IMU (CAN)](task-info/hipnuc-imu-can.md)
+    * [HIPNUC IMU (CAN)](task-info/hipnuc-imu-can.md)
 
 * Actuators
-  * [DSHOT600](task-info/dshot.md)
-  * [DJI Motor](task-info/dji-motor.md)
-  * [DM Motor](task-info/dm-motor.md)
-  * [LkTech Motor](task-info/lk-motor.md)
-  * [Onboard PWM](task-info/onboard-pwm.md)
+    * [DSHOT600](task-info/dshot.md)
+    * [DJI Motor](task-info/dji-motor.md)
+    * [DM Motor](task-info/dm-motor.md)
+    * [LkTech Motor](task-info/lk-motor.md)
+    * [Onboard PWM](task-info/onboard-pwm.md)
 
-
-#### Untested tasks :( 
+#### Untested tasks :(
 
 They're probably not working or are not working properly.
 
 Testing is in progress and will be updated.
 
 * Sensors:
-  * [~~MS5837 (30BA)~~ **UNTESTED](task-info/ms5837-30ba.md)
-  * [~~Onboard ADC~~ **UNTESTED](task-info/onboard-adc.md)
-  * [~~PMU (CAN)~~ **UNTESTED](task-info/pmu-can.md)
-* Actuators:
-  * [~~External PWM~~ **UNTESTED](task-info/external-pwm.md)
+    * [~~MS5837 (30BA)~~ **UNTESTED](task-info/ms5837-30ba.md)
+    * [~~Onboard ADC~~ **UNTESTED](task-info/onboard-adc.md)
+    * [~~PMU (CAN)~~ **UNTESTED](task-info/pmu-can.md)
+    * [SUPER CAP (CAN) **UNTESTED](task-info/super-cap.md)
 
+* Actuators:
+    * [~~External PWM~~ **UNTESTED](task-info/external-pwm.md)
 
 ### Download Configuration File
 

@@ -30,6 +30,8 @@ namespace aim::ecat {
     }
 
     EthercatNode::EthercatNode() : Node("EthercatNode"), running_(true), exiting_(false), exiting_reset_called_(false) {
+        RCLCPP_INFO(*logging::get_sys_logger(), "Current version: %s", GIT_HASH);
+
         this->declare_parameter<std::string>("interface", "enp2s0");
         interface_ = this->get_parameter("interface").as_string();
         RCLCPP_INFO(*logging::get_sys_logger(), "Using interface: %s", interface_.c_str());

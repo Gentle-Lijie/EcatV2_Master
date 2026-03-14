@@ -9,6 +9,10 @@
 #include "thread"
 #include "rclcpp/rclcpp.hpp"
 
+#ifndef GIT_HASH
+#define GIT_HASH "unknown"
+#endif
+
 namespace aim::ecat::task {
     class TaskWrapper;
 }
