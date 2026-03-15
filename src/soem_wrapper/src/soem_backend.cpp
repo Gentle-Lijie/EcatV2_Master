@@ -233,6 +233,10 @@ namespace aim::ecat {
                     task_wrapper = std::make_unique<task::dm_motor::DM_MOTOR>();
                     break;
                 }
+                case task::SUPER_CAP_APP_ID: {
+                    task_wrapper = std::make_unique<task::super_cap::SUPER_CAP>();
+                    break;
+                }
                 default: {
                     RCLCPP_ERROR(*get_cfg_logger(), "Unknown task type = %d", task_type);
                 }
