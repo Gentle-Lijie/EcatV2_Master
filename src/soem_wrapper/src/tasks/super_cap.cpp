@@ -19,7 +19,7 @@ namespace aim::ecat::task {
                                                                       {
                                                                           "connection_lost_write_action",
                                                                           "can_inst",
-                                                                          "chassis_to_cap_id", "cap_to_chassis_id_"
+                                                                          "chassis_to_cap_id", "cap_to_chassis_id"
                                                                       });
         memcpy(buf + *offset, sdo_buf, sdo_len);
         *offset += sdo_len;
