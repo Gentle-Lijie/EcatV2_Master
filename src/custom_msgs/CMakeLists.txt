@@ -12,7 +12,7 @@ find_package(geometry_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
         "msg/ReadDJIRC.msg"
-
+        "msg/ReadVT13RC.msg"
         "msg/ReadSBUSRC.msg"
 
         "msg/WriteDSHOT.msg"

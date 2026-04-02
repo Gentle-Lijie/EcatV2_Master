@@ -29,6 +29,7 @@
 #include "custom_msgs/msg/write_dm_motor_speed_control.hpp"
 #include "custom_msgs/msg/read_super_cap.hpp"
 #include "custom_msgs/msg/write_super_cap.hpp"
+#include "custom_msgs/msg/read_vt13_rc.hpp"
 
 namespace aim::ecat {
     class SlaveDevice;
@@ -49,6 +50,7 @@ namespace aim::ecat::task {
     constexpr uint8_t SBUS_RC_APP_ID = 11;
     constexpr uint8_t DM_MOTOR_APP_ID = 12;
     constexpr uint8_t SUPER_CAP_APP_ID = 13;
+    constexpr uint8_t VT13_RC_APP_ID = 14;
 
     class TaskWrapper {
         uint8_t type_id_ = 0;
@@ -590,6 +592,29 @@ namespace aim::ecat::task {
             void read() override;
 
             void init_value() override;
+        };
+    }
+
+    namespace vt13_rc {
+        class VT13_RC final : public TaskWrapper {
+            static custom_msgs::msg::ReadVT13RC custom_msgs_readvt13rc_shared_msg;
+            rclcpp::Publisher<custom_msgs::msg::ReadVT13RC>::SharedPtr publisher_{};
+
+        public:
+            VT13_RC() : TaskWrapper(VT13_RC_APP_ID, "VT13_RC", true, false) {
+            }
+
+            void init_sdo(uint8_t * /*buf*/, int * /*offset*/, uint16_t slave_id, const std::string &prefix) override;
+
+            void publish_empty_message() override;
+
+            void read() override;
+
+            void cleanup() override {
+                if (publisher_) {
+                    publisher_.reset();
+                }
+            }
         };
     }
 }
