@@ -140,7 +140,7 @@ namespace aim::ecat::task {
     }
 
     void DJI_MOTOR::read() {
-        custom_msgs_readdjimotor_shared_msg.header.stamp = slave_device_->get_current_data_stamp();;
+        custom_msgs_readdjimotor_shared_msg.header.stamp = slave_device_->get_current_data_stamp();
         shared_offset_ = pdoread_offset_;
 
         if (is_motor_enabled[0]) {
@@ -238,21 +238,27 @@ namespace aim::ecat::task {
         std::lock_guard lock(slave_device_->mtx_);
         int offset = pdowrite_offset_;
 
-        if (is_motor_enabled[0]) {
-            write_uint8(msg->motor1_enable, slave_device_->get_master_to_slave_buf().data(), &offset);
-            write_int16(msg->motor1_cmd, slave_device_->get_master_to_slave_buf().data(), &offset);
-        }
-        if (is_motor_enabled[1]) {
-            write_uint8(msg->motor2_enable, slave_device_->get_master_to_slave_buf().data(), &offset);
-            write_int16(msg->motor2_cmd, slave_device_->get_master_to_slave_buf().data(), &offset);
-        }
-        if (is_motor_enabled[2]) {
-            write_uint8(msg->motor3_enable, slave_device_->get_master_to_slave_buf().data(), &offset);
-            write_int16(msg->motor3_cmd, slave_device_->get_master_to_slave_buf().data(), &offset);
-        }
-        if (is_motor_enabled[3]) {
-            write_uint8(msg->motor4_enable, slave_device_->get_master_to_slave_buf().data(), &offset);
-            write_int16(msg->motor4_cmd, slave_device_->get_master_to_slave_buf().data(), &offset);
-        }
+        // Always write all four motor slots to maintain fixed PDO layout.
+        // The slave firmware expects data at fixed offsets regardless of which
+        // motors have a non-zero CAN ID configured.  Disabled motors receive 0.
+        write_uint8(is_motor_enabled[0] ? msg->motor1_enable : 0,
+                    slave_device_->get_master_to_slave_buf().data(), &offset);
+        write_int16(is_motor_enabled[0] ? msg->motor1_cmd : 0,
+                    slave_device_->get_master_to_slave_buf().data(), &offset);
+
+        write_uint8(is_motor_enabled[1] ? msg->motor2_enable : 0,
+                    slave_device_->get_master_to_slave_buf().data(), &offset);
+        write_int16(is_motor_enabled[1] ? msg->motor2_cmd : 0,
+                    slave_device_->get_master_to_slave_buf().data(), &offset);
+
+        write_uint8(is_motor_enabled[2] ? msg->motor3_enable : 0,
+                    slave_device_->get_master_to_slave_buf().data(), &offset);
+        write_int16(is_motor_enabled[2] ? msg->motor3_cmd : 0,
+                    slave_device_->get_master_to_slave_buf().data(), &offset);
+
+        write_uint8(is_motor_enabled[3] ? msg->motor4_enable : 0,
+                    slave_device_->get_master_to_slave_buf().data(), &offset);
+        write_int16(is_motor_enabled[3] ? msg->motor4_cmd : 0,
+                    slave_device_->get_master_to_slave_buf().data(), &offset);
     }
 }

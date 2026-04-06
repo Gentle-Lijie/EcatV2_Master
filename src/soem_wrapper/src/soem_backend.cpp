@@ -108,19 +108,17 @@ namespace aim::ecat {
 
             // only explicitly clear buf in first configuration try
             if (oldSn == 0) {
-                master_to_slave_buf_.clear();
-                master_to_slave_buf_.resize(
-                    get_node()->get_device_master_to_slave_buf_len(ec_slave[index_].eep_id));
-                master_to_slave_buf_len_ = get_node()->get_device_master_to_slave_buf_len(
-                    ec_slave[index_].eep_id);
-                master_to_slave_buf_.clear();
+                // Use assign() to atomically resize and zero-fill both buffers.
+                // The previous pattern of resize() followed by clear() was wrong:
+                // clear() sets size to 0 while preserving capacity, leaving the
+                // buffers in a misleading state (size==0, capacity==N).
+                master_to_slave_buf_.assign(
+                    get_node()->get_device_master_to_slave_buf_len(ec_slave[index_].eep_id), 0);
+                master_to_slave_buf_len_ = static_cast<int>(master_to_slave_buf_.size());
 
-                slave_to_master_buf_.clear();
-                slave_to_master_buf_.resize(
-                    get_node()->get_device_slave_to_master_buf_len(ec_slave[index_].eep_id));
-                slave_to_master_buf_len_ = get_node()->get_device_slave_to_master_buf_len(
-                    ec_slave[index_].eep_id);
-                slave_to_master_buf_.clear();
+                slave_to_master_buf_.assign(
+                    get_node()->get_device_slave_to_master_buf_len(ec_slave[index_].eep_id), 0);
+                slave_to_master_buf_len_ = static_cast<int>(slave_to_master_buf_.size());
             }
 
             RCLCPP_INFO(*get_cfg_logger(),
@@ -242,8 +240,16 @@ namespace aim::ecat {
                     break;
                 }
                 default: {
-                    RCLCPP_ERROR(*get_cfg_logger(), "Unknown task type = %d", task_type);
+                    RCLCPP_ERROR(*get_cfg_logger(),
+                                 "Unknown task type = %d for slave %d, app %d. Aborting configuration.",
+                                 task_type, index_, app_idx);
+                    return false;
                 }
+            }
+
+            if (!task_wrapper) {
+                RCLCPP_ERROR(*get_cfg_logger(), "task_wrapper is null for slave %d, app %d", index_, app_idx);
+                return false;
             }
 
             task_wrapper->init_sdo(arg_buf_.data(),
@@ -309,12 +315,20 @@ namespace aim::ecat {
         // and slave will send it back in slave_status
         // the travel latency is the recv time - sent time
         if (slave_status_ == master_status_) {
-            // unit: ms
-            std_msgs_float32_shared_msg.data =
-                    static_cast<float>((current_time - last_latency_check_packet_send_time_).seconds() * 1000.f);
-            current_data_stamp_ = last_latency_check_packet_send_time_;
+            // Only publish latency after the first valid round-trip.
+            // last_latency_check_packet_send_time_ starts at epoch (0); skip
+            // that first measurement because current_time - 0 would be a huge
+            // erroneous value equal to time since Unix epoch.
+            if (last_latency_check_packet_send_time_.nanoseconds() != 0) {
+                // unit: ms
+                std_msgs_float32_shared_msg.data =
+                        static_cast<float>((current_time - last_latency_check_packet_send_time_).seconds() * 1000.f);
+                current_data_stamp_ = last_latency_check_packet_send_time_;
+                latency_publisher_->publish(std_msgs_float32_shared_msg);
+            } else {
+                current_data_stamp_ = current_time;
+            }
             last_latency_check_packet_send_time_ = current_time;
-            latency_publisher_->publish(std_msgs_float32_shared_msg);
 
             // latency calculation number increments here
             if (master_status_ >= 250) {

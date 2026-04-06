@@ -87,6 +87,11 @@ namespace aim::ecat {
         std::thread data_thread_{};
         std::thread checker_thread_{};
 
+        // Mutex that serialises all SOEM API calls.
+        // SOEM is not thread-safe: datacycle_callback and state_check_callback
+        // both call SOEM functions and must not do so concurrently.
+        std::mutex soem_api_mtx_{};
+
         int expectedWkc_{};
         std::atomic<int> wkc_{};
         std::atomic<bool> in_operational_{};
