@@ -29,6 +29,7 @@
 #include "custom_msgs/msg/write_dm_motor_speed_control.hpp"
 #include "custom_msgs/msg/read_super_cap.hpp"
 #include "custom_msgs/msg/write_super_cap.hpp"
+#include "custom_msgs/msg/read_canpmu.hpp"
 #include "custom_msgs/msg/read_vt13_rc.hpp"
 
 namespace aim::ecat {
@@ -448,28 +449,26 @@ namespace aim::ecat::task {
     }
 
     namespace pmu_uavcan {
-        // TODO: task waiting for test
-        // struct CAN_PMU {
-        //     static constexpr uint8_t type_id = CAN_PMU_APP_ID;
-        //     static constexpr auto type_enum = "CAN_PMU";
-        //
-        //     static void
-        //     init_sdo(uint8_t * /*buf*/, int * /*offset*/, const uint32_t & /*sn*/, const uint8_t /*slave_id*/,
-        //              const std::string &prefix) {
-        //         node->create_and_insert_publisher<custom_msgs::msg::ReadCANPMU>(prefix);
-        //     }
-        //
-        //     static void
-        //     read(const uint8_t *buf, int *offset, const std::string &prefix) {
-        //         custom_msgs_readcanpmu_shared_msg.header.stamp = rclcpp::Clock().now();
-        //
-        //         custom_msgs_readcanpmu_shared_msg.temperature = read_float16(buf, offset) - 273.15f;
-        //         custom_msgs_readcanpmu_shared_msg.voltage = read_float16(buf, offset);
-        //         custom_msgs_readcanpmu_shared_msg.current = read_float16(buf, offset);
-        //
-        //         EthercatNode::publish_msg<custom_msgs::msg::ReadCANPMU>(prefix, custom_msgs_readcanpmu_shared_msg);
-        //     }
-        // };
+        class PMU_CAN final : public TaskWrapper {
+            static custom_msgs::msg::ReadCANPMU custom_msgs_readcanpmu_shared_msg;
+            rclcpp::Publisher<custom_msgs::msg::ReadCANPMU>::SharedPtr publisher_{};
+
+        public:
+            PMU_CAN() : TaskWrapper(CAN_PMU_APP_ID, "PMU_CAN", true, false) {
+            }
+
+            void cleanup() override {
+                if (publisher_) {
+                    publisher_.reset();
+                }
+            }
+
+            void init_sdo(uint8_t * /*buf*/, int * /*offset*/, uint16_t slave_id, const std::string &prefix) override;
+
+            void publish_empty_message() override;
+
+            void read() override;
+        };
     }
 
     namespace sbus_rc {

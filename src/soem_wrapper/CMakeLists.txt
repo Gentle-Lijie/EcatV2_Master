@@ -47,6 +47,7 @@ add_executable(soem_backend
         src/tasks/sbus_rc.cpp
         src/tasks/super_cap.cpp
         src/tasks/vt13_rc.cpp
+        src/tasks/pmu_can.cpp
 
         src/utils/io_utils.cpp
         src/utils/logger_utils.cpp

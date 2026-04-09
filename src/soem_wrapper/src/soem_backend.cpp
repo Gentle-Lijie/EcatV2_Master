@@ -225,6 +225,10 @@ namespace aim::ecat {
                     task_wrapper = std::make_unique<task::pwm::ONBOARD_PWM>();
                     break;
                 }
+                case task::CAN_PMU_APP_ID: {
+                    task_wrapper = std::make_unique<task::pmu_uavcan::PMU_CAN>();
+                    break;
+                }
                 case task::SBUS_RC_APP_ID: {
                     task_wrapper = std::make_unique<task::sbus_rc::SBUS_RC>();
                     break;
