@@ -43,6 +43,7 @@ add_executable(soem_backend
         src/tasks/dshot.cpp
         src/tasks/hipnuc_imu_can.cpp
         src/tasks/ms5837_30ba.cpp
+        src/tasks/external_pwm.cpp
         src/tasks/lk_motor.cpp
         src/tasks/onboard_pwm.cpp
         src/tasks/sbus_rc.cpp

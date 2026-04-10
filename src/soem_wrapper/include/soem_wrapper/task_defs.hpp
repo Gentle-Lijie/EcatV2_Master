@@ -32,6 +32,7 @@
 #include "custom_msgs/msg/read_canpmu.hpp"
 #include "custom_msgs/msg/read_vt13_rc.hpp"
 #include "custom_msgs/msg/read_ms5837_ba30.hpp"
+#include "custom_msgs/msg/write_external_pwm.hpp"
 
 namespace aim::ecat {
     class SlaveDevice;
@@ -226,34 +227,28 @@ namespace aim::ecat::task {
             void init_value() override;
         };
 
-        // TODO: task waiting for test
-        // struct EXTERNAL_PWM {
-        //     static constexpr uint8_t type_id = EXTERNAL_PWM_APP_ID;
-        //     static constexpr auto type_enum = "EXTERNAL_PWM";
-        //
-        //     static void
-        //     init_sdo(uint8_t *buf, int *offset, const uint32_t & /*sn*/, const uint16_t slave_id,
-        //              const std::string &prefix) {
-        //         memcpy(buf + *offset,
-        //                sdo_data.build_buf(fmt::format("{}sdowrite_", prefix),
-        //                                   {"uart_id", "pwm_period", "channel_num", "init_value"}),
-        //                6);
-        //         *offset += 6;
-        //         node->create_and_insert_subscriber<custom_msgs::msg::WriteExternalPWM>(prefix, slave_id);
-        //     }
-        //
-        //     static void
-        //     init_value(uint8_t *buf, int *offset, const std::string &prefix) {
-        //         const uint16_t init_value = get_field_as<uint16_t>(fmt::format("{}sdowrite_init_value", prefix));
-        //         const uint8_t channel_num = get_field_as<uint8_t>(fmt::format("{}sdowrite_channel_num", prefix));
-        //
-        //         for (int i = 1; i <= channel_num; i++) {
-        //             RCLCPP_INFO(cfg_logger, "prefix=%s will write init value=%d at m2s buf idx=%d", prefix.c_str(), init_value,
-        //                         *offset);
-        //             write_uint16(init_value, buf, offset);
-        //         }
-        //     }
-        // };
+        class EXTERNAL_PWM final : public TaskWrapper {
+            rclcpp::Subscription<custom_msgs::msg::WriteExternalPWM>::SharedPtr subscriber_{};
+
+            uint16_t init_value_ = 0;
+            uint8_t channel_num_ = 0;
+
+            void on_command(custom_msgs::msg::WriteExternalPWM::SharedPtr msg) const;
+
+        public:
+            EXTERNAL_PWM() : TaskWrapper(EXTERNAL_PWM_APP_ID, "EXTERNAL_PWM", false, true) {
+            }
+
+            void cleanup() override {
+                if (subscriber_) {
+                    subscriber_.reset();
+                }
+            }
+
+            void init_sdo(uint8_t *buf, int *offset, uint16_t slave_id, const std::string &prefix) override;
+
+            void init_value() override;
+        };
 
         class DSHOT final : public TaskWrapper {
             rclcpp::Subscription<custom_msgs::msg::WriteDSHOT>::SharedPtr subscriber_{};
