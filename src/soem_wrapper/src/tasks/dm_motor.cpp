@@ -118,7 +118,7 @@ namespace aim::ecat::task {
     }
 
     void DM_MOTOR::read() {
-        custom_msgs_readdmmotor_shared_msg.header.stamp = slave_device_->get_current_data_stamp();;
+        custom_msgs_readdmmotor_shared_msg.header.stamp = slave_device_->get_current_data_stamp();
 
         custom_msgs_readdmmotor_shared_msg.disabled = 0;
         custom_msgs_readdmmotor_shared_msg.enabled = 0;
@@ -212,7 +212,10 @@ namespace aim::ecat::task {
         int offset = pdowrite_offset_;
 
         write_uint8(msg->enable, slave_device_->get_master_to_slave_buf().data(), &offset);
-        static uint8_t WriteDmMotorMITControl_data[8] = {};
+        // Use a stack-allocated (non-static) buffer so that multiple DM_MOTOR
+        // instances on different slaves cannot clobber each other's data when
+        // using a multi-threaded executor.
+        uint8_t WriteDmMotorMITControl_data[8] = {};
 
         const uint16_t writeDmMotorMITControl_pos = float_to_uint(msg->p_des,
                                                                   -pmax_,

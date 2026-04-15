@@ -62,9 +62,16 @@ namespace aim::ecat {
         RCLCPP_INFO(*logging::get_sys_logger(), "Shutting down");
 
         exiting_ = true;
-        // wait until reset command sent
-        while (!exiting_reset_called_) {
+        // wait until reset command sent, but no longer than 2 seconds
+        constexpr int max_wait_ms = 2000;
+        int waited_ms = 0;
+        while (!exiting_reset_called_ && waited_ms < max_wait_ms) {
             rclcpp::sleep_for(std::chrono::milliseconds(10));
+            waited_ms += 10;
+        }
+        if (!exiting_reset_called_) {
+            RCLCPP_ERROR(*logging::get_sys_logger(),
+                         "Timeout waiting for data thread reset signal, forcing shutdown");
         }
 
         // then wait for another 100ms for slaves to reset actuators
@@ -126,8 +133,11 @@ namespace aim::ecat {
         in_operational_ = true;
 
         while (running_) {
-            // recv ecat frame
-            wkc_ = ec_receive_processdata(100);
+            // recv ecat frame — hold SOEM mutex for the receive call only
+            {
+                std::lock_guard soem_lock(soem_api_mtx_);
+                wkc_ = ec_receive_processdata(100);
+            }
 
             // transfer data from ecat stack into buffer managed by ourselves
             for (const auto &slave: get_slave_devices()) {
@@ -158,6 +168,9 @@ namespace aim::ecat {
                                 ec_slavecount);
                 }
             }
+
+            // obtain current time once per cycle using the node's own clock
+            current_time = get_clock()->now();
 
             // process pdo device by devices
             for (const auto &slave: get_slave_devices()) {
@@ -211,7 +224,6 @@ namespace aim::ecat {
 
                 // if slave is ready/working
                 if (slave->is_ready()) {
-                    current_time = rclcpp::Clock().now();
                     slave->process_pdo(current_time);
                 }
             }
@@ -236,8 +248,11 @@ namespace aim::ecat {
                 slave->transfer_to_slave();
             }
 
-            // send ecat frame
-            ec_send_processdata();
+            // send ecat frame — hold SOEM mutex for the send call only
+            {
+                std::lock_guard soem_lock(soem_api_mtx_);
+                ec_send_processdata();
+            }
         }
 
         // destroy all publisher and subscriber
@@ -262,6 +277,10 @@ namespace aim::ecat {
                                      wkc_.load(),
                                      expectedWkc_,
                                      ec_group[0].docheckstate);
+                // Hold soem_api_mtx_ for the entire state-check block so that
+                // the data thread's ec_receive/ec_send calls cannot interleave
+                // with ec_readstate / ec_reconfig_slave / etc.
+                std::lock_guard soem_lock(soem_api_mtx_);
                 ec_group[0].docheckstate = FALSE;
                 ec_readstate();
 
@@ -417,12 +436,15 @@ namespace aim::ecat {
         } while (chk-- && ec_slave[0].state != EC_STATE_OPERATIONAL);
 
         // pre-final-op state check
-        if (ec_slave[0].state == EC_STATE_OPERATIONAL) {
-            RCLCPP_INFO(*logging::get_cfg_logger(), "Operational state reached for all slaves.");
-            data_thread_ = std::thread(&EthercatNode::datacycle_callback, this);
-            checker_thread_ = std::thread(&EthercatNode::state_check_callback, this);
+        if (ec_slave[0].state != EC_STATE_OPERATIONAL) {
+            RCLCPP_ERROR(*logging::get_cfg_logger(),
+                         "Failed to reach OPERATIONAL state after 50 attempts. Aborting setup.");
+            return false;
         }
 
+        RCLCPP_INFO(*logging::get_cfg_logger(), "Operational state reached for all slaves.");
+        data_thread_ = std::thread(&EthercatNode::datacycle_callback, this);
+        checker_thread_ = std::thread(&EthercatNode::state_check_callback, this);
         return true;
     }
 

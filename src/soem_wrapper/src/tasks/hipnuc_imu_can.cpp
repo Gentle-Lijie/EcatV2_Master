@@ -60,7 +60,7 @@ namespace aim::ecat::task {
     }
 
     void HIPNUC_IMU_CAN::read() {
-        sensor_msgs_imu_shared_msg.header.stamp = slave_device_->get_current_data_stamp();;
+        sensor_msgs_imu_shared_msg.header.stamp = slave_device_->get_current_data_stamp();
         sensor_msgs_imu_shared_msg.header.frame_id = conf_frame_name_;
 
         int offset = pdoread_offset_;

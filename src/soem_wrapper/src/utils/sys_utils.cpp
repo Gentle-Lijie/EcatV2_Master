@@ -30,6 +30,14 @@ namespace aim::utils::sys {
     }
 
     void move_threads(const int cpu_id, const std::string &cpu_list, const std::string &nic_name) {
+        // Validate cpu_list to prevent shell injection: only digits, commas and hyphens are allowed.
+        if (!std::regex_match(cpu_list, std::regex("^[0-9,\\-]+$"))) {
+            RCLCPP_ERROR(*get_sys_logger(),
+                         "move_threads: invalid cpu_list value '%s' - must contain only digits, commas and hyphens",
+                         cpu_list.c_str());
+            return;
+        }
+
         std::string ps_output = exec_cmd("ps -eLo pid,psr,comm --no-headers");
         std::istringstream ps_stream(ps_output);
         std::string line;
@@ -47,7 +55,11 @@ namespace aim::utils::sys {
                                  "Move %d %s to cpu %s", pid, comm.c_str(), cpu_list.c_str());
                     std::string taskset_cmd = "sudo taskset -cp " + cpu_list + " " + std::to_string(pid) +
                                               " > /dev/null 2>&1";
-                    system(taskset_cmd.c_str());
+                    const int ret = system(taskset_cmd.c_str());
+                    if (ret != 0) {
+                        RCLCPP_WARN(*get_sys_logger(),
+                                    "taskset command for pid %d returned %d", pid, ret);
+                    }
                 }
             }
         }

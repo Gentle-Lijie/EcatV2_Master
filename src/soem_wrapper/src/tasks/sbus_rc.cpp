@@ -45,7 +45,7 @@ namespace aim::ecat::task {
     }
 
     void SBUS_RC::read() {
-        custom_msgs_readsbusrc_shared_msg.header.stamp = slave_device_->get_current_data_stamp();;
+        custom_msgs_readsbusrc_shared_msg.header.stamp = slave_device_->get_current_data_stamp();
 
         if (slave_device_->get_slave_to_master_buf()[pdoread_offset_ + 23]) {
             custom_msgs_readsbusrc_shared_msg.channels[0] =
